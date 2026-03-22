@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inequality in Access to Public Transit in NYC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── RESET ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #EE352E;
+      --blue:   #0039A6;
+      --green:  #00933C;
+      --orange: #FF6319;
+      --yellow: #FCCC0A;
+      --purple: #B933AD;
+      --silver: #808183;
+      --dark:   #111111;
+      --light:  #F8F8F6;
+      --gray:   #F0EEE9;
+      --text:   #1a1a1a;
+      --muted:  #555;
+      --nav-h:  58px;
+      --max-w:  1100px;
+    }
+
+    html { scroll-behavior: smooth; }
+    /* System font fallbacks ensure the site looks great even without internet */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text); background: #fff; overflow-x: hidden;
+    }
+
+    /* ─── TYPOGRAPHY ─────────────────────────────────────────── */
+    h1 { font-family: 'Playfair Display', 'Georgia', 'Times New Roman', serif; font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: 1.1; font-weight: 800; }
+    h2 { font-family: 'Playfair Display', 'Georgia', 'Times New Roman', serif; font-size: clamp(1.7rem, 3.5vw, 2.8rem); line-height: 1.25; font-weight: 700; }
+    h3 { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: clamp(0.9rem, 1.8vw, 1.2rem); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    p  { font-size: clamp(0.92rem, 1.4vw, 1.05rem); line-height: 1.8; color: var(--muted); }
+
+    /* ─── UTILITIES ──────────────────────────────────────────── */
+    .container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+    .section   { padding: 6rem 0; scroll-margin-top: var(--nav-h); }
+
+    /* ════════════════════════════════════════════════════════
+       SCROLL REVEAL BASE
+    ════════════════════════════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.12s; }
+    .reveal-delay-2 { transition-delay: 0.26s; }
+    .reveal-delay-3 { transition-delay: 0.42s; }
+
+    /* Slide-from-left variant */
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+    /* Photo wipe-reveal */
+    .photo-reveal {
+      overflow: hidden;
+    }
+    .photo-reveal img {
+      transform: scale(1.06);
+      transition: transform 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .photo-reveal.visible img { transform: scale(1); }
+
+    /* ════════════════════════════════════════════════════════
+       WORD-BY-WORD HEADING ANIMATION
+    ════════════════════════════════════════════════════════ */
+    .word-anim .word {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(22px);
+      animation: wordUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .word-anim.is-hero .word { color: #fff; }
+    .word-anim.is-hero .word.accent { color: var(--yellow); }
+
+    @keyframes wordUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* Animated colored underline on h2 */
+    .heading-lined { position: relative; display: inline-block; }
+    .heading-lined::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -6px;
+      height: 4px;
+      width: 0;
+      border-radius: 2px;
+      transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s;
+      background: var(--line-color, var(--blue));
+    }
+    .reveal.visible .heading-lined::after { width: 100%; }
+
+    /* ════════════════════════════════════════════════════════
+       SUBWAY DIVIDERS
+    ════════════════════════════════════════════════════════ */
+    .div-red    { height: 5px; background: var(--red);    }
+    .div-blue   { height: 5px; background: var(--blue);   }
+    .div-green  { height: 5px; background: var(--green);  }
+    .div-orange { height: 5px; background: var(--orange); }
+    .div-yellow { height: 5px; background: var(--yellow); }
+    .div-purple { height: 5px; background: var(--purple); }
+    .div-tri    { height: 6px; background: linear-gradient(to right,
+      var(--red) 16.6%, var(--blue) 16.6% 33.3%, var(--green) 33.3% 50%,
+      var(--orange) 50% 66.6%, var(--yellow) 66.6% 83.3%, var(--purple) 83.3%); }
+
+    /* Animated divider — draws from left */
+    .div-animated {
+      height: 5px;
+      position: relative;
+      background: #e5e5e5;
+    }
+    .div-animated::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%; width: 0;
+      background: inherit;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .div-animated.drawn::after { width: 100%; }
+
+    /* ════════════════════════════════════════════════════════
+       NAVBAR
+    ════════════════════════════════════════════════════════ */
+    #navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: rgba(10, 10, 10, 0.97);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    .nav-inner {
+      max-width: var(--max-w);
+      margin: 0 auto; padding: 0 1.5rem;
+      width: 100%; display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 0.6rem;
+      text-decoration: none; color: #fff;
+      font-weight: 700; font-size: 0.82rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      margin-right: 1rem; flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .nav-logo:hover { opacity: 0.8; }
+
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: var(--red); border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 0.3rem;
+      flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+
+    .nav-link {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.28rem 0.65rem; border-radius: 4px;
+      text-decoration: none; font-size: 0.72rem;
+      font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      transition: color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+    .nav-link.active { color: #fff; }
+
+    .pill {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.58rem; font-weight: 900; flex-shrink: 0;
+    }
+    .pill-1 { background: var(--red);    color: #fff; }
+    .pill-a { background: var(--blue);   color: #fff; }
+    .pill-4 { background: var(--green);  color: #fff; }
+    .pill-f { background: var(--orange); color: #fff; }
+    .pill-n { background: var(--yellow); color: #111; }
+    .pill-7 { background: var(--purple); color: #fff; }
+    .pill-l { background: var(--silver); color: #fff; }
+
+    /* ════════════════════════════════════════════════════════
+       HERO
+    ════════════════════════════════════════════════════════ */
+    #hero {
+      position: relative;
+      height: 100vh; min-height: 640px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; background: #0a1220;
+      margin-top: var(--nav-h);
+    }
+
+    #hero-bg {
+      position: absolute; inset: 0;
+      background-image: url('Picture1.jpg');
+      /* Hero: Elevated 7 train approaching with Manhattan skyline */
+      background-size: cover;
+      background-position: center 55%;
+      will-change: transform;
+    }
+
+    #hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.35) 0%,
+        rgba(0,0,0,0.6) 45%,
+        rgba(0,0,0,0.88) 100%
+      );
+    }
+
+    /* subtle scan-line texture */
+    #hero-overlay::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none;
+    }
+
+    #hero-content {
+      position: relative; z-index: 2;
+      text-align: center; padding: 0 1.5rem;
+      max-width: 920px;
+    }
+
+    #hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--yellow); margin-bottom: 1.6rem;
+      opacity: 0; animation: fadeUp 0.7s ease 0.3s forwards;
+    }
+
+    /* blinking cursor after eyebrow */
+    #hero-eyebrow::after {
+      content: '|';
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+      color: var(--yellow);
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* h1 words injected by JS with staggered animation */
+    #hero-title {
+      color: #fff; margin-bottom: 1.6rem;
+      opacity: 0; animation: fadeIn 0.1s ease 0.5s forwards;
+    }
+
+    #hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: rgba(255,255,255,0.75); line-height: 1.7;
+      margin-bottom: 3.5rem;
+      opacity: 0; animation: fadeUp 0.7s ease 1.6s forwards;
+    }
+
+    /* Stat chips in hero */
+    #hero-chips {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem;
+      margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 0.7s ease 1.85s forwards;
+    }
+    .hero-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.85rem; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+      border: 1px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(4px);
+    }
+    .hero-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Animated subway route SVG */
+    #subway-route {
+      position: absolute; bottom: 88px; left: 50%;
+      transform: translateX(-50%);
+      width: 320px; height: 22px; z-index: 2;
+      opacity: 0; animation: fadeIn 0.4s ease 1.2s forwards;
+    }
+    .seg {
+      stroke-dasharray: 300; stroke-dashoffset: 300;
+      stroke-linecap: round; stroke-width: 3; fill: none;
+    }
+    .seg-1 { stroke: var(--red);    animation: drawSeg 0.7s ease 1.4s forwards; }
+    .seg-2 { stroke: var(--blue);   animation: drawSeg 0.7s ease 1.7s forwards; }
+    .seg-3 { stroke: var(--green);  animation: drawSeg 0.7s ease 2.0s forwards; }
+    .seg-4 { stroke: var(--orange); animation: drawSeg 0.7s ease 2.3s forwards; }
+    .seg-5 { stroke: var(--yellow); animation: drawSeg 0.7s ease 2.6s forwards; }
+    .seg-6 { stroke: var(--purple); animation: drawSeg 0.7s ease 2.9s forwards; }
+    .rdot { opacity: 0; }
+    .rdot-1 { animation: fadeIn 0.3s ease 2.0s forwards; }
+    .rdot-2 { animation: fadeIn 0.3s ease 2.3s forwards; }
+    .rdot-3 { animation: fadeIn 0.3s ease 2.6s forwards; }
+    .rdot-4 { animation: fadeIn 0.3s ease 2.9s forwards; }
+    .rdot-5 { animation: fadeIn 0.3s ease 3.2s forwards; }
+    .rdot-6 { animation: fadeIn 0.3s ease 3.5s forwards; }
+    .rdot-7 { animation: fadeIn 0.3s ease 3.8s forwards; }
+
+    /* Scrolling ticker strip */
+    #hero-ticker {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 36px; z-index: 3;
+      background: rgba(0,0,0,0.8);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center;
+      overflow: hidden;
+    }
+    .ticker-track {
+      display: flex; align-items: center;
+      animation: tickerScroll 28s linear infinite;
+      white-space: nowrap;
+    }
+    .ticker-item {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0 2.5rem;
+      font-size: 0.68rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+    .t-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    @keyframes tickerScroll { to { transform: translateX(-50%); } }
+
+    #scroll-down {
+      position: absolute; bottom: 2.4rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 2; display: flex; flex-direction: column;
+      align-items: center; gap: 0.4rem;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+      opacity: 0; animation: fadeIn 0.6s ease 2s forwards;
+    }
+    .scroll-arrow {
+      width: 16px; height: 16px;
+      border-right: 2px solid rgba(255,255,255,0.5);
+      border-bottom: 2px solid rgba(255,255,255,0.5);
+      transform: rotate(45deg);
+      animation: bounce 1.5s ease-in-out infinite;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       STAT COUNTER STRIP
+    ════════════════════════════════════════════════════════ */
+    #stats-strip {
+      background: var(--dark);
+      padding: 3rem 0;
+    }
+    .stats-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .stat-item {
+      text-align: center; padding: 1.2rem;
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800; line-height: 1;
+      display: block; margin-bottom: 0.4rem;
+    }
+    .stat-label {
+      font-size: 0.72rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+    @media (max-width: 600px) {
+      .stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .stat-item:nth-child(2) { border-right: none; }
+      .stat-item:nth-child(3) { border-right: 1px solid rgba(255,255,255,0.08); }
+    }
+
+    /* ════════════════════════════════════════════════════════
+       SECTION COMMON
+    ════════════════════════════════════════════════════════ */
+    .section-tag {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .line-badge {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 900; flex-shrink: 0;
+    }
+
+    .map-wrap {
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+      margin: 2.5rem 0 1.5rem;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .map-wrap iframe { display: block; width: 100%; height: 560px; border: none; }
+
+    /* Analysis cards */
+    .a-card {
+      border-radius: 0 10px 10px 0; padding: 1.4rem 1.8rem;
+      background: var(--light); border-left: 4px solid var(--blue);
+      margin-top: 1.2rem;
+    }
+    .a-card.red    { border-left-color: var(--red);    }
+    .a-card.green  { border-left-color: var(--green);  }
+    .a-card.orange { border-left-color: var(--orange); }
+    .a-card ul { list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+    .a-card li {
+      font-size: 0.93rem; color: var(--text);
+      display: flex; align-items: flex-start; gap: 0.55rem;
+    }
+    .a-card li::before { content: '→'; font-weight: 700; flex-shrink: 0; margin-top:0.05em; color: var(--blue); }
+    .a-card.red    li::before { color: var(--red);    }
+    .a-card.green  li::before { color: var(--green);  }
+    .a-card.orange li::before { color: var(--orange); }
+
+    .callout {
+      border-radius: 10px; padding: 1.1rem 1.5rem; margin-top: 1.2rem;
+      border-left: 4px solid var(--yellow); background: #fffbea;
+    }
+    .callout p { color: var(--text); font-weight: 500; font-size: 0.96rem; }
+
+    .transition-q {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: clamp(1rem, 1.8vw, 1.15rem);
+      color: var(--muted); margin-top: 2rem;
+      padding: 0.9rem 1.4rem; border-left: 3px solid #ccc;
+    }
+
+    /* Section photos */
+    .section-photo {
+      width: 100%; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      margin: 2rem 0; position: relative;
+    }
+    .section-photo img {
+      width: 100%; height: 340px; object-fit: cover; display: block;
+      transition: transform 1s ease;
+    }
+    .section-photo:hover img { transform: scale(1.02); }
+    .section-photo .photo-cap {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.75rem 1.2rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+      color: rgba(255,255,255,0.9); font-size: 0.78rem; letter-spacing: 0.05em;
+    }
+
+    /* Data viz images */
+    .data-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem; margin: 2rem 0;
+    }
+    .data-img-box {
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 22px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0; background: #fff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .data-img-box:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,0,0,0.15); }
+    .data-img-box img { width: 100%; display: block; object-fit: contain; background: #fff; }
+    .data-img-label {
+      padding: 0.7rem 1rem; font-size: 0.76rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--muted); border-top: 1px solid #eee; background: var(--light);
+    }
+
+    /* ════════════════════════════════════════════════════════
+       SECTION BACKGROUNDS
+    ════════════════════════════════════════════════════════ */
+    #infrastructure { background: #fff; }
+    #population     { background: var(--gray); }
+    #inequality     { background: #fff; }
+    #case-studies   { background: var(--light); }
+    #conclusion     { background: #fff; text-align: center; }
+    #maps           { background: var(--gray); }
+
+    /* ════════════════════════════════════════════════════════
+       PATTERNS — DARK SECTION
+    ════════════════════════════════════════════════════════ */
+    #patterns { background: var(--dark); color: #fff; }
+    #patterns h2 { color: #fff; }
+    #patterns .section-tag { color: var(--yellow); }
+
+    .pattern-list { list-style: none; display: flex; flex-direction: column; gap: 1.4rem; margin-top: 2.5rem; }
+    .pattern-list li { display: flex; align-items: flex-start; gap: 1.1rem; }
+    .pnum {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.82rem; flex-shrink: 0;
+      margin-top: 0.12em; color: #fff;
+    }
+    .pnum.p1 { background: var(--red);    }
+    .pnum.p2 { background: var(--blue);   }
+    .pnum.p3 { background: var(--green);  }
+    .pnum.p4 { background: var(--orange); }
+    .pattern-list li p    { color: rgba(255,255,255,0.7); font-size: clamp(0.9rem,1.4vw,1rem); line-height: 1.75; }
+    .pattern-list li strong { display: block; color: #fff; font-size: clamp(0.95rem,1.6vw,1.1rem); margin-bottom: 0.2rem; }
+
+    .data-img-dark {
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.5);
+      margin-top: 2.5rem; border: 1px solid #2a2a2a;
+    }
+    .data-img-dark img { width: 100%; display: block; }
+    .data-img-dark .dark-label {
+      padding: 0.65rem 1rem; font-size: 0.74rem; font-weight: 600;
+      letter-spacing: 0.05em; color: rgba(255,255,255,0.4);
+      background: #181818; border-top: 1px solid #2a2a2a;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       CASE STUDY CARDS
+    ════════════════════════════════════════════════════════ */
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem; margin-top: 3rem;
+    }
+    .case-card {
+      background: #fff; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 4px 22px rgba(0,0,0,0.09);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease;
+    }
+    .case-card:hover { transform: translateY(-10px); box-shadow: 0 22px 50px rgba(0,0,0,0.18); }
+    .card-accent { height: 4px; }
+    .card-accent.blue   { background: var(--blue);   }
+    .card-accent.red    { background: var(--red);    }
+    .card-accent.orange { background: var(--orange); }
+
+    .card-img {
+      height: 220px; overflow: hidden; position: relative;
+    }
+    .card-img img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.6s ease;
+    }
+    .case-card:hover .card-img img { transform: scale(1.06); }
+
+    /* Fallback gradients (shown if image fails to load) */
+    .card-img.manhattan { background: linear-gradient(135deg, #0039A6, #001244); }
+    .card-img.queens    { background: linear-gradient(135deg, #EE352E, #6b0000); }
+    .card-img.bronx     { background: linear-gradient(135deg, #FF6319, #7a2c00); }
+
+    .card-img-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.8rem 1.1rem 0.6rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: #fff; font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .card-badge {
+      display: inline-block; padding: 0.2rem 0.6rem;
+      border-radius: 20px; font-size: 0.67rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.7rem;
+    }
+    .badge-blue   { background: #e5ecf9; color: var(--blue);   }
+    .badge-red    { background: #fdecea; color: var(--red);    }
+    .badge-orange { background: #fff0e6; color: var(--orange); }
+    .card-body { padding: 1.4rem; }
+    .card-body h3 {
+      font-family: 'Playfair Display', serif; font-size: 1.25rem;
+      font-style: italic; text-transform: none; letter-spacing: 0; margin-bottom: 0.9rem;
+    }
+    .card-pts { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .card-pts li { font-size: 0.88rem; color: var(--muted); display: flex; align-items: flex-start; gap: 0.45rem; }
+    .card-pts li::before { content: '•'; font-weight: 800; flex-shrink: 0; }
+    .case-card.blue-card   .card-pts li::before { color: var(--blue);   }
+    .case-card.red-card    .card-pts li::before { color: var(--red);    }
+    .case-card.orange-card .card-pts li::before { color: var(--orange); }
+
+    /* ════════════════════════════════════════════════════════
+       CONCLUSION
+    ════════════════════════════════════════════════════════ */
+    #conclusion h2 { max-width: 800px; margin: 0 auto 2rem; }
+    .concl-body { max-width: 660px; margin: 0 auto; }
+    .concl-body p { margin-bottom: 1.1rem; }
+    .concl-callout {
+      max-width: 660px; margin: 2.5rem auto 0;
+      background: var(--dark); color: #fff;
+      border-radius: 12px; padding: 1.75rem 2rem;
+    }
+    .concl-callout p { color: rgba(255,255,255,0.82); margin: 0; }
+    .concl-callout strong { color: var(--yellow); }
+
+    /* ════════════════════════════════════════════════════════
+       MAP GALLERY
+    ════════════════════════════════════════════════════════ */
+    .gallery-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem; margin-top: 3rem;
+    }
+    .g-card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 22px rgba(0,0,0,0.09); }
+    .g-card-head { padding: 0.85rem 1.2rem; display: flex; align-items: center; gap: 0.6rem; border-bottom: 1px solid #eee; }
+    .g-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .g-card-head h3 { font-size: 0.77rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    .g-card iframe { display: block; width: 100%; height: 310px; border: none; }
+
+    /* ════════════════════════════════════════════════════════
+       FLOATING TRAIN BUTTON
+    ════════════════════════════════════════════════════════ */
+    #back-to-top {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+      width: 70px; height: 70px; border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, #0055cc, #001e6e);
+      border: 2.5px solid rgba(255,255,255,0.18);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 24px rgba(0,57,166,0.5), 0 0 0 0 rgba(0,57,166,0.3);
+      opacity: 0; transform: scale(0.6) translateY(16px);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+    #back-to-top.show {
+      opacity: 1; transform: scale(1) translateY(0); pointer-events: auto;
+      animation: trainRock 3.5s ease-in-out infinite;
+    }
+    #back-to-top:hover {
+      background: radial-gradient(circle at 40% 40%, #0066ee, #002a90);
+      animation: trainPulse 0.3s ease forwards;
+      box-shadow: 0 8px 32px rgba(0,57,166,0.7), 0 0 20px rgba(0,102,238,0.4);
+    }
+
+    @keyframes trainRock {
+      0%, 100% { transform: scale(1) rotate(0deg);     }
+      20%       { transform: scale(1) rotate(-2deg) translateX(-1px); }
+      40%       { transform: scale(1) rotate(0deg);     }
+      60%       { transform: scale(1) rotate(2deg) translateX(1px);  }
+      80%       { transform: scale(1) rotate(0deg);     }
+    }
+    @keyframes trainPulse {
+      to { transform: scale(1.08); }
+    }
+
+    /* Wheel spin animation — applied to wheel elements */
+    .train-wheel {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    #back-to-top.show .train-wheel {
+      animation: spinWheel 1.2s linear infinite;
+    }
+    @keyframes spinWheel { to { transform: rotate(360deg); } }
+
+    /* Headlight pulse */
+    .train-light {
+      animation: lightBlink 2s ease-in-out infinite;
+    }
+    @keyframes lightBlink {
+      0%, 100% { opacity: 1;   filter: drop-shadow(0 0 3px #FCCC0A); }
+      50%       { opacity: 0.5; filter: drop-shadow(0 0 1px #FCCC0A); }
+    }
+
+    /* ════════════════════════════════════════════════════════
+       TRAIN RAIL & LAUNCH ANIMATION
+    ════════════════════════════════════════════════════════ */
+
+    /* Rail track — two vertical lines centered on the button */
+    #train-rail {
+      position: fixed;
+      bottom: 0;
+      right: calc(2rem + 35px); /* center of the 70px button */
+      transform: translateX(50%);
+      width: 20px;
+      height: 0;
+      z-index: 996;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    #train-rail::before,
+    #train-rail::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      height: 0;
+      border-radius: 2px 2px 0 0;
+      background: linear-gradient(
+        to top,
+        rgba(255,255,255,0.9) 0%,
+        rgba(100,160,255,0.6) 40%,
+        rgba(0,100,255,0) 100%
+      );
+      transition: none;
+    }
+    #train-rail::before { left: 1px;  }
+    #train-rail::after  { right: 1px; }
+
+    #train-rail.active::before,
+    #train-rail.active::after {
+      animation: railGrow 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    #train-rail.active::after {
+      animation-delay: 0.03s;
+    }
+
+    @keyframes railGrow {
+      from { height: 0;    opacity: 1; }
+      to   { height: 110vh; opacity: 0; }
+    }
+
+    /* Speed glow trail on the button while launching */
+    #back-to-top.launching {
+      /* override the rock animation */
+      animation: trainLaunch 0.75s cubic-bezier(0.4, 0, 0.6, 1) forwards !important;
+    }
+
+    @keyframes trainLaunch {
+      0%  {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        box-shadow: 0 6px 24px rgba(0,57,166,0.5);
+      }
+      8%  {
+        /* dip down — like a steam release */
+        transform: scale(0.94) translateY(7px);
+        opacity: 1;
+      }
+      22% {
+        /* burst upward */
+        transform: scale(1.1) translateY(-18px);
+        opacity: 1;
+        box-shadow: 0 0 36px rgba(50,130,255,0.9), 0 -30px 50px rgba(0,57,166,0.5);
+      }
+      100% {
+        transform: scale(0.75) translateY(-115vh);
+        opacity: 0;
+        box-shadow: none;
+      }
+    }
+
+    /* Speed lines (::after pseudo) behind button while launching */
+    #back-to-top.launching::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, 20px);
+      width: 6px;
+      height: 0;
+      background: linear-gradient(to bottom, rgba(100,180,255,0.8), transparent);
+      border-radius: 3px;
+      animation: speedTrail 0.75s ease forwards;
+    }
+    @keyframes speedTrail {
+      0%   { height: 0;    opacity: 0; }
+      30%  { height: 60px; opacity: 0.8; }
+      100% { height: 180px; opacity: 0; }
+    }
+
+    /* ════════════════════════════════════════════════════════
+       FOOTER
+    ════════════════════════════════════════════════════════ */
+    footer {
+      background: #0a0a0a; color: rgba(255,255,255,0.3);
+      text-align: center; padding: 2.5rem 1rem;
+      font-size: 0.78rem; letter-spacing: 0.05em;
+    }
+    footer strong { color: rgba(255,255,255,0.65); }
+    .footer-lines {
+      display: flex; justify-content: center; gap: 0.4rem; margin-bottom: 1rem;
+    }
+    .footer-pill {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.62rem; font-weight: 900;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       KEYFRAMES
+    ════════════════════════════════════════════════════════ */
+    @keyframes fadeUp  { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+    @keyframes bounce  { 0%,100%{ transform:rotate(45deg) translateY(0); } 50%{ transform:rotate(45deg) translateY(7px); } }
+    @keyframes drawSeg { to { stroke-dashoffset: 0; } }
+
+    /* ════════════════════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════════════════════ */
+    @media (max-width: 800px) {
+      .section { padding: 4rem 0; }
+      .map-wrap iframe { height: 360px; }
+      .g-card iframe   { height: 240px; }
+      .section-photo img { height: 240px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: 1fr; }
+      .nav-logo span { display: none; }
+      #back-to-top { width: 58px; height: 58px; bottom: 1.2rem; right: 1.2rem; }
+      #hero-chips { display: none; }
+    }
+    @media (max-width: 520px) {
+      .nav-link { padding: 0.25rem 0.4rem; font-size: 0.62rem; }
+      .pill { width: 16px; height: 16px; font-size: 0.55rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════════════════ -->
+<nav id="navbar" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-logo" aria-label="Home">
+      <div class="nav-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <rect x="2" y="7" width="14" height="9" rx="2.5" fill="white"/>
+          <rect x="4.5" y="9.5" width="3.5" height="3.5" rx="0.8" fill="#0039A6"/>
+          <rect x="10" y="9.5" width="3.5" height="3.5" rx="0.8" fill="#0039A6"/>
+          <circle cx="6"  cy="17" r="1.5" fill="#aaa"/>
+          <circle cx="12" cy="17" r="1.5" fill="#aaa"/>
+          <circle cx="9" cy="3.5" r="3" fill="#EE352E"/>
+          <text x="9" y="5.8" text-anchor="middle" font-size="4" fill="white" font-weight="bold" font-family="Arial">N</text>
+        </svg>
+      </div>
+      <span>NYC Transit</span>
+    </a>
+
+    <div class="nav-links" role="list">
+      <a href="#infrastructure" class="nav-link" role="listitem"><span class="pill pill-1">1</span> System</a>
+      <a href="#population"     class="nav-link" role="listitem"><span class="pill pill-a">A</span> Population</a>
+      <a href="#inequality"     class="nav-link" role="listitem"><span class="pill pill-4">4</span> Inequality</a>
+      <a href="#patterns"       class="nav-link" role="listitem"><span class="pill pill-f">F</span> Patterns</a>
+      <a href="#case-studies"   class="nav-link" role="listitem"><span class="pill pill-n">N</span> Cases</a>
+      <a href="#conclusion"     class="nav-link" role="listitem"><span class="pill pill-7">7</span> Conclusion</a>
+      <a href="#maps"           class="nav-link" role="listitem"><span class="pill pill-l">L</span> Maps</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════
+     HERO — Title Page with Subway Image
+════════════════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div id="hero-bg"></div>
+  <div id="hero-overlay"></div>
+
+  <div id="hero-content">
+    <div id="hero-eyebrow">Geography Project &nbsp;·&nbsp; Urban Studies</div>
+
+    <h1 id="hero-title" class="word-anim is-hero">
+      <!-- Words injected by JS for staggered animation -->
+      Inequality in Access to <em>Public Transit</em> in NYC
+    </h1>
+
+    <p id="hero-subtitle">
+      Who can access the subway — and who is left behind?<br/>
+      A spatial investigation into transit equity across New York City's five boroughs.
+    </p>
+
+    <div id="hero-chips">
+      <span class="hero-chip"><span class="chip-dot" style="background:var(--red)"></span>472 Stations</span>
+      <span class="hero-chip"><span class="chip-dot" style="background:var(--blue)"></span>245 Miles of Track</span>
+      <span class="hero-chip"><span class="chip-dot" style="background:var(--green)"></span>5 Boroughs</span>
+      <span class="hero-chip"><span class="chip-dot" style="background:var(--yellow)"></span>3.6M Daily Riders</span>
+    </div>
+  </div>
+
+  <!-- Animated subway route line -->
+  <svg id="subway-route" viewBox="0 0 320 22" aria-hidden="true">
+    <line class="seg seg-1" x1="5"   y1="11" x2="58"  y2="11"/>
+    <line class="seg seg-2" x1="58"  y1="11" x2="111" y2="11"/>
+    <line class="seg seg-3" x1="111" y1="11" x2="164" y2="11"/>
+    <line class="seg seg-4" x1="164" y1="11" x2="217" y2="11"/>
+    <line class="seg seg-5" x1="217" y1="11" x2="270" y2="11"/>
+    <line class="seg seg-6" x1="270" y1="11" x2="315" y2="11"/>
+    <circle class="rdot rdot-1" cx="5"   cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-2" cx="58"  cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-3" cx="111" cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-4" cx="164" cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-5" cx="217" cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-6" cx="270" cy="11" r="5" fill="white"/>
+    <circle class="rdot rdot-7" cx="315" cy="11" r="5" fill="white"/>
+  </svg>
+
+  <div id="scroll-down" aria-hidden="true">Scroll <div class="scroll-arrow"></div></div>
+
+  <!-- Scrolling news ticker -->
+  <div id="hero-ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <!-- duplicated for seamless loop -->
+      <span class="ticker-item"><span class="t-dot" style="background:var(--red)"></span>1 · 2 · 3 — IRT Broadway–Seventh Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--blue)"></span>A · C · E — IND Eighth Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--green)"></span>4 · 5 · 6 — IRT Lexington Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--orange)"></span>B · D · F · M — IND Sixth Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--yellow)"></span>N · Q · R · W — BMT Broadway Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--purple)"></span>7 — IRT Flushing Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--silver)"></span>L — BMT Canarsie Line</span>
+      <!-- duplicate -->
+      <span class="ticker-item"><span class="t-dot" style="background:var(--red)"></span>1 · 2 · 3 — IRT Broadway–Seventh Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--blue)"></span>A · C · E — IND Eighth Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--green)"></span>4 · 5 · 6 — IRT Lexington Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--orange)"></span>B · D · F · M — IND Sixth Avenue Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--yellow)"></span>N · Q · R · W — BMT Broadway Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--purple)"></span>7 — IRT Flushing Line</span>
+      <span class="ticker-item"><span class="t-dot" style="background:var(--silver)"></span>L — BMT Canarsie Line</span>
+    </div>
+  </div>
+</section>
+
+<div class="div-tri"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     STAT COUNTER STRIP
+════════════════════════════════════════════════════════════════ -->
+<section id="stats-strip" aria-label="Key statistics">
+  <div class="container">
+    <div class="stats-inner">
+      <div class="stat-item reveal">
+        <span class="stat-num" data-target="472" style="color:var(--red)">0</span>
+        <span class="stat-label">Subway Stations</span>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <span class="stat-num" data-target="245" style="color:var(--blue)">0</span>
+        <span class="stat-label">Miles of Track</span>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <span class="stat-num" data-target="5" style="color:var(--yellow)">0</span>
+        <span class="stat-label">Boroughs</span>
+      </div>
+      <div class="stat-item reveal reveal-delay-3">
+        <span class="stat-num" data-target="3.6" data-suffix="M" style="color:var(--green)">0</span>
+        <span class="stat-label">Daily Riders</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 2 — INFRASTRUCTURE
+════════════════════════════════════════════════════════════════ -->
+<section id="infrastructure" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--red)">
+      <span class="line-badge" style="background:var(--red);color:#fff">1</span>
+      Step 1 — Observation
+    </div>
+
+    <h2 class="reveal reveal-delay-1">
+      <span class="heading-lined" style="--line-color:var(--red)">Where Is Public Transport</span><br/>
+      Concentrated?
+    </h2>
+
+    <p class="reveal reveal-delay-2" style="max-width:680px;margin-top:1.2rem;">
+      New York City operates one of the world's largest subway networks — 472 stations spanning
+      245 miles of track. Yet the distribution of stations is far from uniform.
+      The map below shows subway lines, stations, and their walking-distance buffers.
+    </p>
+
+    <div class="map-wrap reveal reveal-delay-3">
+      <iframe
+        src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=c115b9575eb54f18ac7b968f93f1e66a&theme=light&heading=true&legend=true&center=-73.97043190573635,40.72184551110387&scale=36111.909643"
+        title="Subway lines and transit concentration"
+        allow="local-network-access; geolocation"
+        loading="lazy" allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- Subway interior atmospheric photo -->
+    <div class="section-photo reveal">
+      <img src="subway-1501783038513-superJumbo.jpg" alt="Crowded 42nd Street subway platform during rush hour" loading="lazy" />
+      <div class="photo-cap">Rush hour at 42nd Street — the daily reality of millions of New York City commuters</div>
+    </div>
+
+    <aside class="a-card red reveal">
+      <ul>
+        <li>Manhattan is saturated with stations — almost every block is within easy walking distance of a stop.</li>
+        <li>Large coverage gaps appear in eastern Queens, southeastern Brooklyn, and nearly all of Staten Island.</li>
+        <li>The outer boroughs depend heavily on slower, less frequent bus networks to fill these gaps.</li>
+      </ul>
+    </aside>
+
+    <p class="transition-q reveal">
+      "But access only matters when people actually need it. To understand inequality,
+      we must first ask: <em>where do people live?</em>"
+    </p>
+
+  </div>
+</section>
+
+<div class="div-blue"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 3 — POPULATION
+════════════════════════════════════════════════════════════════ -->
+<section id="population" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--blue)">
+      <span class="line-badge" style="background:var(--blue);color:#fff">A</span>
+      Step 2 — Analysis
+    </div>
+
+    <h2 class="reveal reveal-delay-1">
+      <span class="heading-lined" style="--line-color:var(--blue)">Where Do People</span><br/>
+      Need Public Transport?
+    </h2>
+
+    <p class="reveal reveal-delay-2" style="max-width:680px;margin-top:1.2rem;">
+      Population density maps reveal where transit demand is highest. When overlaid with subway
+      infrastructure, a structural mismatch begins to appear — dense communities are not always
+      the ones with the strongest coverage.
+    </p>
+
+    <div class="map-wrap reveal reveal-delay-3">
+      <iframe
+        src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=267dd5e05cd1460d995ba5db2e1659ea&theme=light&heading=true&legend=true&center=-73.95665351332994,40.724531139053965&scale=72223.819286"
+        title="Population density NYC"
+        allow="local-network-access; geolocation"
+        loading="lazy" allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- Crowded platform photo -->
+    <div class="section-photo reveal">
+      <img src="Picture4.png" alt="Crowded platform at 168th Street station" loading="lazy" />
+      <div class="photo-cap">Commuters waiting at 168th Street station — Washington Heights, The Bronx</div>
+    </div>
+
+    <aside class="a-card blue reveal">
+      <ul>
+        <li>Significant density exists well outside Manhattan — in the Bronx, central Brooklyn, and western Queens.</li>
+        <li>These densely populated zones often coincide with the transit gaps identified in the previous map.</li>
+        <li>This mismatch is not accidental — it reflects decades of unequal infrastructure investment.</li>
+      </ul>
+    </aside>
+
+    <div class="callout reveal">
+      <p>Key finding: High population density does not guarantee strong transit access. This mismatch begins to reveal structural inequality.</p>
+    </div>
+
+  </div>
+</section>
+
+<div class="div-green"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 4 — INEQUALITY
+════════════════════════════════════════════════════════════════ -->
+<section id="inequality" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--green)">
+      <span class="line-badge" style="background:var(--green);color:#fff">4</span>
+      Step 3 — Comparison
+    </div>
+
+    <h2 class="reveal reveal-delay-1">
+      <span class="heading-lined" style="--line-color:var(--green)">Who Has Access —</span><br/>
+      and Who Does Not?
+    </h2>
+
+    <p class="reveal reveal-delay-2" style="max-width:680px;margin-top:1.2rem;">
+      When socioeconomic data is layered onto transit access, a clear pattern emerges.
+      Lower-income communities are disproportionately concentrated in zones with the weakest
+      subway coverage — compounding existing disadvantage.
+    </p>
+
+    <div class="map-wrap reveal reveal-delay-3">
+      <iframe
+        src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=9d78f2f7c0034078be54954191a1c7ca&theme=light&heading=true&legend=true&scroll=false&center=-73.8828304854531,40.72563063181631&scale=144447.638572"
+        title="Transit access and socioeconomic data"
+        allow="local-network-access; geolocation"
+        loading="lazy" allowfullscreen>
+      </iframe>
+    </div>
+
+    <!-- Poverty map + Housing map -->
+    <div class="data-grid">
+      <div class="data-img-box reveal">
+        <img src="Picture6.png" alt="Map showing population below federal poverty line without transit access" loading="lazy" />
+        <div class="data-img-label">Without Transit Access — Population Below Federal Poverty Line</div>
+      </div>
+      <div class="data-img-box reveal reveal-delay-1">
+        <img src="Picture9.jpg" alt="Affordable housing units by location for extremely low income" loading="lazy" />
+        <div class="data-img-label">Affordable Housing Units — Extremely Low Income</div>
+      </div>
+    </div>
+
+    <aside class="a-card orange reveal">
+      <ul>
+        <li>Lower-income neighborhoods frequently lack proximity to frequent, reliable subway service.</li>
+        <li>Communities below the federal poverty line show the longest average walk times to the nearest station.</li>
+        <li>Affordable housing is often concentrated in areas with weaker transit coverage.</li>
+      </ul>
+    </aside>
+
+    <div class="callout reveal" style="border-left-color:var(--blue);background:#eef3ff;">
+      <p style="color:var(--blue)"><strong>Key insight:</strong> Transit inequality is both <em>spatial</em> and <em>social</em>. Where you live shapes what you can access — and what opportunities are within reach.</p>
+    </div>
+
+  </div>
+</section>
+
+<div class="div-orange"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 5 — PATTERNS (dark)
+════════════════════════════════════════════════════════════════ -->
+<section id="patterns" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--yellow)">
+      <span class="line-badge" style="background:var(--orange);color:#fff">F</span>
+      Step 4 — Synthesis
+    </div>
+
+    <h2 class="reveal reveal-delay-1">What Patterns<br/>Can We Identify?</h2>
+
+    <div class="data-img-dark reveal reveal-delay-2">
+      <img src="Picture7.png" alt="How New Yorkers Get to Work: Transportation Mode by Borough" loading="lazy" />
+      <div class="dark-label">Data: How New Yorkers Get to Work — Transportation Mode by Borough (ACS)</div>
+    </div>
+
+    <ul class="pattern-list">
+      <li class="reveal reveal-delay-1">
+        <div class="pnum p1">1</div>
+        <div>
+          <strong>Uneven infrastructure distribution</strong>
+          <p>Stations are concentrated in Manhattan, leaving large portions of the outer boroughs underserved — despite covering millions of residents.</p>
+        </div>
+      </li>
+      <li class="reveal reveal-delay-2">
+        <div class="pnum p2">2</div>
+        <div>
+          <strong>Density does not determine access</strong>
+          <p>Population density and transit coverage do not align. Staten Island is 63% car-dependent, yet is part of the same city as car-free Manhattan.</p>
+        </div>
+      </li>
+      <li class="reveal reveal-delay-3">
+        <div class="pnum p3">3</div>
+        <div>
+          <strong>Outer boroughs are structurally disadvantaged</strong>
+          <p>Residents of eastern Queens, the South Bronx, and southeastern Brooklyn face longer commutes, slower buses, and higher transport costs relative to income.</p>
+        </div>
+      </li>
+      <li class="reveal" style="transition-delay:0.58s">
+        <div class="pnum p4">4</div>
+        <div>
+          <strong>Income and accessibility are tightly correlated</strong>
+          <p>Lower-income communities consistently appear in areas with weaker transit coverage, amplifying inequality in employment, healthcare, and education access.</p>
+        </div>
+      </li>
+    </ul>
+
+  </div>
+</section>
+
+<div class="div-yellow"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 6 — CASE STUDY CARDS
+════════════════════════════════════════════════════════════════ -->
+<section id="case-studies" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--purple)">
+      <span class="line-badge" style="background:var(--yellow);color:#111">N</span>
+      Step 5 — Case Studies
+    </div>
+
+    <h2 class="reveal reveal-delay-1">
+      <span class="heading-lined" style="--line-color:var(--purple)">Three Boroughs,</span><br/>
+      Three Realities
+    </h2>
+
+    <p class="reveal reveal-delay-2" style="max-width:640px;margin-top:1.2rem;">
+      Comparing three neighborhoods illustrates how geography, income, and infrastructure
+      converge to create radically different transit experiences within the same city.
+    </p>
+
+    <div class="cards-grid">
+
+      <div class="case-card blue-card reveal">
+        <div class="card-accent blue"></div>
+        <div class="card-img manhattan">
+          <img src="Picture2.jpg" alt="Manhattan skyline at night" loading="lazy" />
+          <div class="card-img-overlay">Manhattan — High Access</div>
+        </div>
+        <div class="card-body">
+          <span class="card-badge badge-blue">High Access</span>
+          <h3>Manhattan</h3>
+          <ul class="card-pts">
+            <li>One of the world's densest subway networks — a station within 5 min walk almost anywhere</li>
+            <li>High accessibility across income levels; 51% of workers commute by public transit</li>
+            <li>Efficient cross-borough connections via multiple intersecting lines</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="case-card red-card reveal reveal-delay-1">
+        <div class="card-accent red"></div>
+        <div class="card-img queens">
+          <img src="Picture5.jpg" alt="Queens elevated train and street view" loading="lazy" />
+          <div class="card-img-overlay">Eastern Queens — Low Access</div>
+        </div>
+        <div class="card-body">
+          <span class="card-badge badge-red">Low Access</span>
+          <h3>Eastern Queens</h3>
+          <ul class="card-pts">
+            <li>Few stations — many residents travel 20–40 min just to reach a subway line</li>
+            <li>Heavy reliance on buses that are slower, less frequent, and more crowded</li>
+            <li>Only 46% of Queens workers commute by public transit; 39% drive</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="case-card orange-card reveal reveal-delay-2">
+        <div class="card-accent orange"></div>
+        <div class="card-img bronx">
+          <img src="Picture8.jpg" alt="South Bronx aerial view with Manhattan skyline" loading="lazy" />
+          <div class="card-img-overlay">South Bronx — High Need</div>
+        </div>
+        <div class="card-body">
+          <span class="card-badge badge-orange">High Need</span>
+          <h3>South Bronx</h3>
+          <ul class="card-pts">
+            <li>Transit exists but is strained — high demand from a dense, lower-income population</li>
+            <li>Highest transit dependency in the city (56%) with few car-ownership alternatives</li>
+            <li>Overcrowded trains and limited service frequency compound everyday hardship</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="div-purple"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 7 — CONCLUSION
+════════════════════════════════════════════════════════════════ -->
+<section id="conclusion" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--purple);justify-content:center">
+      <span class="line-badge" style="background:var(--purple);color:#fff">7</span>
+      Conclusion
+    </div>
+
+    <h2 class="reveal reveal-delay-1">
+      Unequal Access,<br/>
+      <span class="heading-lined" style="--line-color:var(--red)">Unequal Opportunity</span>
+    </h2>
+
+    <div class="concl-body">
+      <p class="reveal reveal-delay-2">
+        Access to public transportation is not distributed equally across New York City.
+        The subway system — though vast — is concentrated in areas that were already well-served,
+        leaving large populations in the outer boroughs without reliable, frequent service.
+      </p>
+      <p class="reveal reveal-delay-3">
+        Geography and income are the two strongest predictors of transit access.
+        Those who live furthest from subway stations are, on average, those who can least
+        afford the time or financial cost of longer, fragmented commutes.
+      </p>
+      <p class="reveal" style="transition-delay:0.6s">
+        Inequality in transit does not exist in isolation — it amplifies inequality in
+        employment, education, healthcare, and social mobility. Closing the transit gap
+        is not merely a transportation question. It is a question of social justice.
+      </p>
+    </div>
+
+    <div class="concl-callout reveal" style="transition-delay:0.75s">
+      <p>
+        <strong>The city that never sleeps</strong> runs on a transit system that does not serve
+        all its residents equally. Addressing this requires not just new lines, but a fundamental
+        rethinking of <strong>who infrastructure is built for</strong> — and who gets left behind.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<div class="div-tri"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     SECTION 8 — MAP GALLERY
+════════════════════════════════════════════════════════════════ -->
+<section id="maps" class="section">
+  <div class="container">
+
+    <div class="section-tag reveal" style="color:var(--silver)">
+      <span class="line-badge" style="background:var(--silver);color:#fff">L</span>
+      Explore
+    </div>
+
+    <h2 class="reveal reveal-delay-1">Interactive Maps</h2>
+    <p class="reveal reveal-delay-2" style="margin-top:0.75rem;max-width:560px;">
+      Explore all three spatial layers. Zoom, pan, and toggle layers to draw your own conclusions.
+    </p>
+
+    <div class="gallery-grid">
+      <div class="g-card reveal">
+        <div class="g-card-head">
+          <span class="g-dot" style="background:var(--red)"></span>
+          <h3>Subway Lines &amp; Coverage</h3>
+        </div>
+        <iframe src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=c115b9575eb54f18ac7b968f93f1e66a&theme=light&heading=true&legend=true&center=-73.97043190573635,40.72184551110387&scale=36111.909643"
+          title="Subway coverage map" allow="local-network-access; geolocation" loading="lazy" allowfullscreen></iframe>
+      </div>
+      <div class="g-card reveal reveal-delay-1">
+        <div class="g-card-head">
+          <span class="g-dot" style="background:var(--blue)"></span>
+          <h3>Population Density</h3>
+        </div>
+        <iframe src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=267dd5e05cd1460d995ba5db2e1659ea&theme=light&heading=true&legend=true&center=-73.95665351332994,40.724531139053965&scale=72223.819286"
+          title="Population density map" allow="local-network-access; geolocation" loading="lazy" allowfullscreen></iframe>
+      </div>
+      <div class="g-card reveal reveal-delay-2">
+        <div class="g-card-head">
+          <span class="g-dot" style="background:var(--green)"></span>
+          <h3>Access &amp; Socioeconomics</h3>
+        </div>
+        <iframe src="https://sisbasel.maps.arcgis.com/apps/mapviewer/index.html?configurableview=true&webmap=9d78f2f7c0034078be54954191a1c7ca&theme=light&heading=true&legend=true&scroll=false&center=-73.8828304854531,40.72563063181631&scale=144447.638572"
+          title="Access and socioeconomic map" allow="local-network-access; geolocation" loading="lazy" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div-tri"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-lines" aria-hidden="true">
+    <span class="footer-pill" style="background:var(--red);color:#fff">1</span>
+    <span class="footer-pill" style="background:var(--blue);color:#fff">A</span>
+    <span class="footer-pill" style="background:var(--green);color:#fff">4</span>
+    <span class="footer-pill" style="background:var(--orange);color:#fff">F</span>
+    <span class="footer-pill" style="background:var(--yellow);color:#111">N</span>
+    <span class="footer-pill" style="background:var(--purple);color:#fff">7</span>
+    <span class="footer-pill" style="background:var(--silver);color:#fff">L</span>
+  </div>
+  <strong>Inequality in Access to Public Transit in New York City</strong><br/>
+  Geography Project &nbsp;·&nbsp; Urban Studies &nbsp;·&nbsp; 2026<br/>
+  Interactive maps powered by ArcGIS Online
+</footer>
+
+<!-- Rail track overlay (grows upward when train launches) -->
+<div id="train-rail" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     FLOATING ANIMATED TRAIN BUTTON
+════════════════════════════════════════════════════════════════ -->
+<button id="back-to-top" aria-label="Back to top — scroll to beginning">
+  <!-- Front-facing metro car with animated wheels and headlight -->
+  <svg width="46" height="46" viewBox="0 0 46 46" fill="none" aria-hidden="true">
+    <!-- Train body -->
+    <rect x="7" y="15" width="32" height="20" rx="6" fill="white" opacity="0.95"/>
+    <!-- Left window -->
+    <rect x="10.5" y="19.5" width="10" height="9" rx="2.5" fill="#90CAF9"/>
+    <!-- Right window -->
+    <rect x="25.5" y="19.5" width="10" height="9" rx="2.5" fill="#90CAF9"/>
+    <!-- Window shine -->
+    <rect x="11.5" y="20.5" width="3" height="2" rx="1" fill="white" opacity="0.5"/>
+    <rect x="26.5" y="20.5" width="3" height="2" rx="1" fill="white" opacity="0.5"/>
+    <!-- Door gap -->
+    <rect x="22" y="19.5" width="2" height="9" rx="0.5" fill="rgba(0,57,166,0.3)"/>
+    <!-- Bottom grill dots -->
+    <circle cx="18" cy="32" r="1.3" fill="rgba(255,255,255,0.3)"/>
+    <circle cx="23" cy="32" r="1.3" fill="rgba(255,255,255,0.3)"/>
+    <circle cx="28" cy="32" r="1.3" fill="rgba(255,255,255,0.3)"/>
+    <!-- Left wheel -->
+    <circle class="train-wheel" cx="14" cy="37" r="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <circle cx="14" cy="37" r="1.5" fill="rgba(255,255,255,0.6)"/>
+    <!-- Right wheel -->
+    <circle class="train-wheel" cx="32" cy="37" r="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+    <circle cx="32" cy="37" r="1.5" fill="rgba(255,255,255,0.6)"/>
+    <!-- Rail -->
+    <rect x="3" y="40.5" width="40" height="2" rx="1" fill="rgba(255,255,255,0.15)"/>
+    <!-- Route circle at top -->
+    <circle cx="23" cy="9" r="8" fill="white" opacity="0.95"/>
+    <circle cx="23" cy="9" r="6.5" fill="#EE352E"/>
+    <!-- Headlights (left & right of route circle) -->
+    <circle class="train-light" cx="10" cy="9" r="2.5" fill="#FCCC0A"/>
+    <circle class="train-light" cx="36" cy="9" r="2.5" fill="#FCCC0A" style="animation-delay:0.75s"/>
+    <!-- Up arrow inside route circle -->
+    <polyline points="20.5,10.5 23,6.5 25.5,10.5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<!-- ════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+  /* ── 1. Word-by-word hero title animation ─────────────────────── */
+  (function () {
+    const h1 = document.getElementById('hero-title');
+    const raw = h1.innerHTML;
+    // Split on spaces, preserve <em> tags and <br/>
+    const parts = raw.split(/(<[^>]+>|\s+)/);
+    let wordIndex = 0;
+    const baseDelay = 0.6; // seconds after page load
+
+    const rebuilt = parts.map(part => {
+      if (!part.trim() || part.startsWith('<')) return part;
+      const delay = baseDelay + wordIndex * 0.09;
+      wordIndex++;
+      return `<span class="word" style="animation-delay:${delay}s">${part}</span>`;
+    });
+    h1.innerHTML = rebuilt.join('');
+  })();
+
+  /* ── 2. Scroll reveal observer ────────────────────────────────── */
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal, .reveal-left').forEach(el => revealObs.observe(el));
+
+  /* ── 3. Animated dividers observer ───────────────────────────── */
+  const divObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('drawn'); });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.div-animated').forEach(el => divObs.observe(el));
+
+  /* ── 4. Counter animation (stats strip) ───────────────────────── */
+  const counterObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target.querySelector('.stat-num[data-target]');
+      if (!el || el.dataset.animated) return;
+      el.dataset.animated = '1';
+      const target = parseFloat(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      const duration = 1400;
+      const start = performance.now();
+      const isDecimal = String(target).includes('.');
+
+      function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        // ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        el.textContent = (isDecimal ? current.toFixed(1) : Math.round(current)) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }, { threshold: 0.4 });
+
+  document.querySelectorAll('.stat-item').forEach(el => counterObs.observe(el));
+
+  /* ── 5. Hero parallax + back-to-top visibility ─────────────────── */
+  const heroBg  = document.getElementById('hero-bg');
+  const heroEl  = document.getElementById('hero');
+  const backBtn = document.getElementById('back-to-top');
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const sy = window.scrollY;
+        const heroH = heroEl.offsetHeight;
+        if (sy < heroH) heroBg.style.transform = `translateY(${sy * 0.3}px)`;
+        backBtn.classList.toggle('show', sy > heroH * 0.5);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  /* ── 6. Train launch — rides up the rails to top ─────────────── */
+  const rail = document.getElementById('train-rail');
+
+  backBtn.addEventListener('click', () => {
+    // Prevent double-firing
+    if (backBtn.classList.contains('launching')) return;
+
+    // Activate rail track lines growing upward
+    rail.classList.add('active');
+
+    // Brief delay then launch the train
+    setTimeout(() => {
+      backBtn.classList.add('launching');
+      // Scroll begins mid-animation so it feels like the train "carries" you up
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 220);
+    }, 60);
+
+    // Clean up after animation — hide button (scroll observer re-shows if needed)
+    setTimeout(() => {
+      backBtn.classList.remove('launching', 'show');
+      rail.classList.remove('active');
+    }, 900);
+  });
+
+  /* ── 7. Active nav link on scroll ─────────────────────────────── */
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const navObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === `#${id}`));
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+
+  sections.forEach(s => navObs.observe(s));
+</script>
+
+</body>
+</html>
